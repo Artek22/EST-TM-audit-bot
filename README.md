@@ -1,2 +1,2 @@
-# EST-TM-audit-bot
+# EST TM-audit bot
 Сollector of competitors' promotions
