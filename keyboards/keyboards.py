@@ -9,6 +9,6 @@ def create_confirmation_keyboard():
     confirmation_keyboard.row(InlineKeyboardButton(text='Подтвердить',
                                                    callback_data='confirmed'),
                               InlineKeyboardButton(text='Заново',
-                                                   callback_data='canceled'),
+                                                   callback_data='refused'),
                               width=2)
     return confirmation_keyboard.as_markup()

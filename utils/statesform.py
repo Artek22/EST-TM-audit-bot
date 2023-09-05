@@ -1,20 +1,20 @@
 from aiogram.fsm.state import State, StatesGroup
 
 
-class UserForm(StatesGroup):
+class FSMUserForm(StatesGroup):
     '''
     Машина состояний для получения данных о пользователе.
     '''
-    GET_NAME = State()
-    GET_SURNAME = State()
+    get_name = State()
+    get_surname = State()
 
 
-class Competitor(StatesGroup):
+class FSMCompetitor(StatesGroup):
     '''
     Машина состояний для получения данных о конкуренте.
     '''
-    GET_NAME = State()
-    GET_BRAND = State()
-    GET_PROMO = State()
-    GET_BOMUS = State()
-    GET_FIXED_PAYOUT = State()
+    get_name = State()
+    get_brand = State()
+    get_promo = State()
+    get_bonus = State()
+    get_fixed_payout = State()
