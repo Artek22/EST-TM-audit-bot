@@ -13,8 +13,8 @@ class FSMCompetitor(StatesGroup):
     '''
     Машина состояний для получения данных о конкуренте.
     '''
-    get_name = State()
+    get_company_name = State()
     get_brand = State()
-    get_promo = State()
+    get_promo_type = State()
     get_bonus = State()
     get_fixed_payout = State()

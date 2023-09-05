@@ -1,1 +1,1 @@
-1329793884: {'name': 'Пор', 'surname': 'Толщ'}
+1329793884: {'company_name': 'Тогда', 'brand': 'Позор', 'promo_type': 'bonus_lpr'}

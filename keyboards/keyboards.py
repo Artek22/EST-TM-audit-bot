@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
@@ -12,3 +12,26 @@ def create_confirmation_keyboard():
                                                    callback_data='refused'),
                               width=2)
     return confirmation_keyboard.as_markup()
+
+
+def create_activity_keyboard():
+    activity_button: InlineKeyboardButton = InlineKeyboardButton(
+        text='Выслать активность конкурентов',
+        callback_data='send_activity')
+    activity_keyboard: InlineKeyboardMarkup = InlineKeyboardMarkup(
+        inline_keyboard=[[activity_button]])
+    return activity_keyboard
+
+
+def promo_type_keyboard():
+    promo_keyboard: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    promo_keyboard.row(InlineKeyboardButton(text='⬇️Скидка на полке',
+                                            callback_data='discount'),
+                       InlineKeyboardButton(text='🎁Подарок за покупку',
+                                            callback_data='gift'),
+                       InlineKeyboardButton(text='✨Бонус ТП',
+                                            callback_data='bonus_tp'),
+                       InlineKeyboardButton(text='✨Бонус ЛПР',
+                                            callback_data='bonus_lpr'),
+                       width=2)
+    return promo_keyboard.as_markup()

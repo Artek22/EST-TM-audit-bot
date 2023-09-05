@@ -24,7 +24,7 @@ class Competitor(DeclarativeBase):
     id = Column("competitor_id", Integer, nullable=False, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"),
                      nullable=False)
-    name = Column(String(50), nullable=False)
+    company_name = Column(String(50), nullable=False)
     brand = Column(String(50), nullable=False)
     promo_type = Column(String(50), nullable=False)
     bonus = Column(Integer, nullable=False)
