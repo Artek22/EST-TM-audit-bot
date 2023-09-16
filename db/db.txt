@@ -1,1 +1,0 @@
-1329793884: {'company_name': 'Водочный король', 'brand': 'Распутин', 'promo_type': 'gift', 'created_at': datetime.datetime(2023, 9, 13, 14, 55, 36, 999116)}

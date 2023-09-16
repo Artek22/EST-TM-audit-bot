@@ -8,7 +8,8 @@ from utils.statesform import FSMUserForm, FSMCompetitor
 from lexicon.lexicon import LEXICON_COMMANDS, LEXICON
 from keyboards.keyboards import (create_confirmation_keyboard,
                                  create_activity_keyboard, promo_type_keyboard)
-from utils.db_commands import register_user, register_competitor, select_user
+from utils.db_commands import (register_user, register_competitor, select_user,
+                               is_user_in_db)
 from sqlalchemy.sql import exists
 from db.engine import session
 from db.models import User
@@ -29,11 +30,10 @@ async def process_cancel_command_state(message: Message, state: FSMContext):
 @router.message(CommandStart(), StateFilter(default_state))
 async def process_start_command(message: Message, state: FSMContext):
     # Проверяем есть ли юзер в базе
-    user = message.chat.id
-    if session.query(
-        session.query(User).filter(User.id == user).exists()).scalar():
+    user = select_user(message.chat.id)
+    if is_user_in_db(message.chat.id):
         await state.clear()
-        await message.answer('Добро пожаловать',
+        await message.answer(f'Добро пожаловать, {user.name}',
                              reply_markup=create_activity_keyboard())
     else:
         await message.answer(LEXICON_COMMANDS['/start'])

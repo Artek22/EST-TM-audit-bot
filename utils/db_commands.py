@@ -6,6 +6,7 @@ from db.engine import session
 
 
 def register_user(user_data):
+    '''Регистрируем пользователя.'''
     user = User(
         id=user_data['id'],
         name=user_data['name'],
@@ -21,6 +22,7 @@ def register_user(user_data):
 
 
 def register_competitor(data):
+    '''Регистрируем активность конкурента.'''
     competitor = Competitor(
         user_id=data['user_id'],
         company_name=data['company_name'],
@@ -40,7 +42,13 @@ def register_competitor(data):
         return False
 
 
-def select_user(user_id) -> User:
+def select_user(user_id):
     '''Получаем пользователя по id.'''
     user = session.query(User).filter(User.id == user_id).first()
     return user
+
+
+def is_user_in_db(user_id):
+    '''Проверяем наличие пользователя в базе данных.'''
+    return session.query(
+        session.query(User).filter(User.id == user_id).exists()).scalar()
