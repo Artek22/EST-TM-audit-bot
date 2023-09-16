@@ -1,6 +1,5 @@
 from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, String, ARRAY
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.schema import CheckConstraint
 
 from db.engine import engine
 
@@ -27,8 +26,9 @@ class Competitor(DeclarativeBase):
     company_name = Column(String(50), nullable=False)
     brand = Column(String(50), nullable=False)
     promo_type = Column(String(50), nullable=False)
-    bonus = Column(Integer, nullable=False)
-    fixed_payout = Column(Integer, nullable=False)
+    bonus = Column(String(50), nullable=False)
+    condition = Column(String(100), nullable=False)
+    files_id = Column(ARRAY(String), nullable=True)
     created_at = Column(TIMESTAMP, nullable=False)
 
     def __repr__(self):

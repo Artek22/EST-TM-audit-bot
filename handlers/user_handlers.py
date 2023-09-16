@@ -8,10 +8,12 @@ from utils.statesform import FSMUserForm, FSMCompetitor
 from lexicon.lexicon import LEXICON_COMMANDS, LEXICON
 from keyboards.keyboards import (create_confirmation_keyboard,
                                  create_activity_keyboard, promo_type_keyboard)
+from utils.db_commands import register_user, register_competitor, select_user
+from sqlalchemy.sql import exists
+from db.engine import session
+from db.models import User
 
 router = Router()
-# Создаем "базу данных" пользователей
-user_dict = {}
 
 
 # Этот хэндлер будет срабатывать на команду "/cancel" в любых состояниях,
@@ -23,12 +25,22 @@ async def process_cancel_command_state(message: Message, state: FSMContext):
 
 
 # Этот хэндлер срабатывает на команду /start
+# Ввод имени
 @router.message(CommandStart(), StateFilter(default_state))
 async def process_start_command(message: Message, state: FSMContext):
-    await message.answer(LEXICON_COMMANDS['/start'])
-    await state.set_state(FSMUserForm.get_name)
+    # Проверяем есть ли юзер в базе
+    user = message.chat.id
+    if session.query(
+        session.query(User).filter(User.id == user).exists()).scalar():
+        await state.clear()
+        await message.answer('Добро пожаловать',
+                             reply_markup=create_activity_keyboard())
+    else:
+        await message.answer(LEXICON_COMMANDS['/start'])
+        await state.set_state(FSMUserForm.get_name)
 
 
+# Ввод фамилии
 @router.message(StateFilter(FSMUserForm.get_name), F.text.isalpha())
 async def get_name(message: Message, state: FSMContext):
     await state.update_data(name=message.text)
@@ -41,6 +53,7 @@ async def warning_not_name(message: Message):
     await message.answer(LEXICON['err_name'])
 
 
+# Подтверждение ввода данных
 @router.message(StateFilter(FSMUserForm.get_surname), F.text.isalpha())
 async def get_surname(message: Message, state: FSMContext):
     await state.update_data(surname=message.text)
@@ -63,11 +76,9 @@ async def process_survey_finished(callback: CallbackQuery, state: FSMContext):
         await callback.message.delete()
         await state.set_state(FSMUserForm.get_name)
     else:
-        user_dict[callback.from_user.id] = await state.get_data()
-        with open('db/db.txt', 'w') as file:
-            for key, value in user_dict.items():
-                file.write(f'{key}: {value}')
-        file.close()
+        await state.update_data(id=int(callback.message.chat.id))
+        user_data = await state.get_data()
+        register_user(user_data)
         await state.clear()
         await callback.message.edit_text(LEXICON['confirmed'],
                                          reply_markup=create_activity_keyboard())
@@ -81,28 +92,48 @@ async def process_company_name(callback: CallbackQuery, state: FSMContext):
     await state.set_state(FSMCompetitor.get_company_name)
 
 
-@router.message(StateFilter(FSMCompetitor.get_company_name), F.text.isalpha())
+# Сохраняем название компании
+@router.message(StateFilter(FSMCompetitor.get_company_name))
 async def process_brand(message: Message, state: FSMContext):
     await state.update_data(company_name=message.text)
     await message.answer(LEXICON['brand']),
     await state.set_state(FSMCompetitor.get_brand)
 
 
+# Сохраняем бренд
 @router.message(StateFilter(FSMCompetitor.get_brand))
-async def process_brand(message: Message, state: FSMContext):
+async def process_promo(message: Message, state: FSMContext):
     await state.update_data(brand=message.text)
     await message.answer(LEXICON['promo_type'],
                          reply_markup=promo_type_keyboard()),
     await state.set_state(FSMCompetitor.get_promo_type)
 
 
+# Сохраняем тип акции
 @router.callback_query(StateFilter(FSMCompetitor.get_promo_type))
-async def process_condition_for_bonus(callback: CallbackQuery, state: FSMContext):
+async def process_bonus(callback: CallbackQuery, state: FSMContext):
     await state.update_data(promo_type=callback.data)
     await callback.message.delete()
-    await callback.message.answer(LEXICON['condition'])
-    user_dict[callback.from_user.id] = await state.get_data()
-    with open('db/db.txt', 'w') as file:
-        for key, value in user_dict.items():
-            file.write(f'{key}: {value}')
-    file.close()
+    await callback.message.answer(LEXICON['bonus'])
+    await state.set_state(FSMCompetitor.get_bonus)
+
+
+# Сохраняем бонус
+@router.message(StateFilter(FSMCompetitor.get_bonus))
+async def process_condition(message: Message, state: FSMContext):
+    await state.update_data(bonus=message.text)
+    await message.answer(LEXICON['condition']),
+    await state.set_state(FSMCompetitor.get_condition)
+
+
+# Сохраняем условие
+@router.callback_query(StateFilter(FSMCompetitor.get_condition))
+async def process_photo(callback: CallbackQuery, state: FSMContext):
+    await state.update_data(condition=callback.data)
+    await callback.message.answer(LEXICON['photo']),
+    data = await state.get_data()
+    print(data)
+    # await register_competitor(data)
+    await state.clear()
+
+# Todo сделать сохранение фото
