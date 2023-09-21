@@ -19,3 +19,4 @@ class FSMCompetitor(StatesGroup):
     get_bonus = State()
     get_condition = State()
     get_photo = State()
+    confirm = State()

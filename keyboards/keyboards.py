@@ -35,3 +35,13 @@ def promo_type_keyboard():
                                             callback_data='bonus_lpr'),
                        width=2)
     return promo_keyboard.as_markup()
+
+
+def approve_keyboard():
+    approve_button: InlineKeyboardButton = InlineKeyboardButton(
+        text='Подтвердить', callback_data='approved')
+    reject_button: InlineKeyboardButton = InlineKeyboardButton(
+        text='Отменить', callback_data='rejected')
+    ok_keyboard: InlineKeyboardMarkup = InlineKeyboardMarkup(
+        inline_keyboard=[[approve_button], [reject_button]])
+    return ok_keyboard
