@@ -134,6 +134,7 @@ async def get_condition(message: Message, state: FSMContext):
 @router.message(StateFilter(FSMCompetitor.get_photo))
 async def get_files_id(message: Message, state: FSMContext):
     await state.update_data(files_id=message.photo[0].file_id)
+    await state.update_data(user_id=message.chat.id)
     data = await state.get_data()
     register_competitor(data)
     await message.answer(LEXICON['finish'],
