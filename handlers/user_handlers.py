@@ -10,9 +10,6 @@ from keyboards.keyboards import (create_confirmation_keyboard,
                                  create_activity_keyboard, promo_type_keyboard)
 from utils.db_commands import (register_user, register_competitor, select_user,
                                is_user_in_db)
-from sqlalchemy.sql import exists
-from db.engine import session
-from db.models import User
 
 router = Router()
 
@@ -86,7 +83,7 @@ async def process_survey_finished(callback: CallbackQuery, state: FSMContext):
 
 # Начинаем опрос пользователя
 @router.callback_query(StateFilter(default_state), F.data == 'send_activity')
-async def process_company_name(callback: CallbackQuery, state: FSMContext):
+async def process_survey_start(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await callback.message.answer(LEXICON['company_name'])
     await state.set_state(FSMCompetitor.get_company_name)
@@ -94,7 +91,7 @@ async def process_company_name(callback: CallbackQuery, state: FSMContext):
 
 # Сохраняем название компании
 @router.message(StateFilter(FSMCompetitor.get_company_name))
-async def process_brand(message: Message, state: FSMContext):
+async def get_company_name(message: Message, state: FSMContext):
     await state.update_data(company_name=message.text)
     await message.answer(LEXICON['brand']),
     await state.set_state(FSMCompetitor.get_brand)
@@ -102,7 +99,7 @@ async def process_brand(message: Message, state: FSMContext):
 
 # Сохраняем бренд
 @router.message(StateFilter(FSMCompetitor.get_brand))
-async def process_promo(message: Message, state: FSMContext):
+async def get_brand(message: Message, state: FSMContext):
     await state.update_data(brand=message.text)
     await message.answer(LEXICON['promo_type'],
                          reply_markup=promo_type_keyboard()),
@@ -111,7 +108,7 @@ async def process_promo(message: Message, state: FSMContext):
 
 # Сохраняем тип акции
 @router.callback_query(StateFilter(FSMCompetitor.get_promo_type))
-async def process_bonus(callback: CallbackQuery, state: FSMContext):
+async def get_promo_type(callback: CallbackQuery, state: FSMContext):
     await state.update_data(promo_type=callback.data)
     await callback.message.delete()
     await callback.message.answer(LEXICON['bonus'])
@@ -120,20 +117,25 @@ async def process_bonus(callback: CallbackQuery, state: FSMContext):
 
 # Сохраняем бонус
 @router.message(StateFilter(FSMCompetitor.get_bonus))
-async def process_condition(message: Message, state: FSMContext):
+async def get_bonus(message: Message, state: FSMContext):
     await state.update_data(bonus=message.text)
     await message.answer(LEXICON['condition']),
     await state.set_state(FSMCompetitor.get_condition)
 
 
 # Сохраняем условие
-@router.callback_query(StateFilter(FSMCompetitor.get_condition))
-async def process_photo(callback: CallbackQuery, state: FSMContext):
-    await state.update_data(condition=callback.data)
-    await callback.message.answer(LEXICON['photo']),
-    data = await state.get_data()
-    print(data)
-    # await register_competitor(data)
-    await state.clear()
+@router.message(StateFilter(FSMCompetitor.get_condition))
+async def get_condition(message: Message, state: FSMContext):
+    await state.update_data(condition=message.text)
+    await message.answer(LEXICON['photo']),
+    await state.set_state(FSMCompetitor.get_photo)
 
-# Todo сделать сохранение фото
+
+@router.message(StateFilter(FSMCompetitor.get_photo))
+async def get_files_id(message: Message, state: FSMContext):
+    await state.update_data(files_id=message.photo[0].file_id)
+    data = await state.get_data()
+    register_competitor(data)
+    await message.answer(LEXICON['finish'],
+                         reply_markup=create_activity_keyboard()),
+    await state.clear()

@@ -24,12 +24,12 @@ def register_user(user_data):
 def register_competitor(data):
     '''Регистрируем активность конкурента.'''
     competitor = Competitor(
-        user_id=data['user_id'],
+        # user_id=data['user_id'],
         company_name=data['company_name'],
         brand=data['brand'],
         promo_type=data['promo_type'],
         bonus=data['bonus'],
-        condition=data['fixed_payout'],
+        condition=data['condition'],
         files_id=data['files_id'],
         created_at=dt.now(),
     )

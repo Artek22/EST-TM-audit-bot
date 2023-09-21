@@ -28,7 +28,7 @@ class Competitor(DeclarativeBase):
     promo_type = Column(String(50), nullable=False)
     bonus = Column(String(50), nullable=False)
     condition = Column(String(100), nullable=False)
-    files_id = Column(ARRAY(String), nullable=True)
+    files_id = Column(String, nullable=True)
     created_at = Column(TIMESTAMP, nullable=False)
 
     def __repr__(self):
