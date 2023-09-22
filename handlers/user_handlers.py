@@ -5,6 +5,8 @@ from aiogram.fsm.state import default_state
 from aiogram.types import Message, CallbackQuery
 from utils.statesform import FSMUserForm, FSMCompetitor
 
+from est_audit_bot import bot
+from config_data.config import load_config
 from lexicon.lexicon import LEXICON_COMMANDS, LEXICON
 from keyboards.keyboards import (create_confirmation_keyboard,
                                  create_activity_keyboard, promo_type_keyboard,
@@ -13,6 +15,7 @@ from utils.db_commands import (register_user, register_competitor, select_user,
                                is_user_in_db)
 
 router = Router()
+config = load_config()
 
 
 @router.message(Command(commands='cancel'), ~StateFilter(default_state))
@@ -32,7 +35,7 @@ async def process_start_command(message: Message, state: FSMContext):
     user = select_user(message.chat.id)
     if is_user_in_db(message.chat.id):
         await state.clear()
-        await message.answer(f'Добро пожаловать, {user.name}',
+        await message.answer(f'Приветствую, {user.name}',
                              reply_markup=create_activity_keyboard())
     else:
         await message.answer(LEXICON_COMMANDS['/start'])
@@ -168,9 +171,29 @@ async def get_files_id(message: Message, state: FSMContext):
 
 @router.callback_query(FSMCompetitor.confirm, F.data == 'approved')
 async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
-    '''Обработчик кнопки Подтверждаю.'''
+    '''Подтверждение акции и высылка акции боссу'''
     await callback.message.delete()
     data = await state.get_data()
+    info = (
+        f'Название компании: {data["company_name"]}\n'
+        f'Бренд: {data["brand"]}\n'
+        f'Тип промо: {data["promo_type"]}\n'
+        f'Какой бонус: {data["bonus"]}\n'
+        f'Условие получения: {data["condition"]}\n'
+    )
+    image = data['files_id']
     register_competitor(data)
-    await callback.message.answer(LEXICON['finish'])
+    # Высылаем акцию боссу
+    await bot.send_photo(chat_id=config.tg_bot.admin_id, photo=image,
+                         caption=f'Привет, новая акция: {info}')
+    await bot.session.close()
+    await callback.message.answer(LEXICON['finish'], reply_markup=create_activity_keyboard())
+    await state.clear()
+
+
+@router.callback_query(FSMCompetitor.confirm, F.data == 'rejected')
+async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
+    '''Отмена акции'''
+    await callback.message.delete()
+    await callback.message.answer('Попробуем еще раз?', reply_markup=create_activity_keyboard())
     await state.clear()
