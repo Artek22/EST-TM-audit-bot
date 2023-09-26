@@ -13,6 +13,7 @@ class TgBot:
 class Config:
     tg_bot: TgBot
     boss_id: int
+    yandex_id: str
 
 
 def load_config() -> Config:
@@ -20,4 +21,5 @@ def load_config() -> Config:
     env.read_env()
     return Config(
         tg_bot=TgBot(token=env('BOT_TOKEN'), admin_id=int(env('ADMIN_ID'))),
-        boss_id=int(env('BOSS_ID')))
+        boss_id=int(env('BOSS_ID')),
+        yandex_id=env('YANDEX_ID'))

@@ -1,4 +1,6 @@
-from openpyxl import Workbook
+import yadisk
+import datetime as dt
+
 from aiogram import Router, F
 from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -13,7 +15,10 @@ from keyboards.keyboards import (create_confirmation_keyboard,
                                  create_activity_keyboard, promo_type_keyboard,
                                  approve_keyboard, download_keyboard)
 from utils.db_commands import (register_user, register_competitor, select_user,
-                               is_user_in_db)
+                               is_user_in_db, export_xls)
+from db.models import Competitor
+from db.engine import session
+
 
 router = Router()
 config = load_config()
@@ -28,11 +33,6 @@ async def process_cancel_command_state(message: Message, state: FSMContext):
     await message.answer(LEXICON_COMMANDS['/cancel'])
     await state.clear()
 
-
-# @router.message(CommandStart)
-# async def assa(message):
-#     file = FSInputFile('sample.xlsx')
-#     await message.answer_document(document=file)
 
 @router.message(CommandStart(), StateFilter(default_state))
 async def process_start_command(message: Message, state: FSMContext):
@@ -104,23 +104,23 @@ async def process_survey_finished(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == 'export')
 async def export2excel(callback: CallbackQuery):
-    '''Экспорт БД в эксель-файл'''
-    wb = Workbook()
+    '''Экспорт БД в эксель-файл и заливка на Я.Диск'''
+    y = yadisk.YaDisk(token=config.yandex_id)
+    competitors = session.query(Competitor)
+    x_date = '2023-09-26 15:26:09.135528'
 
-    # grab the active worksheet
-    ws = wb.active
-
-    # Data can be assigned directly to cells
-    ws['A1'] = 42
-
-    # Rows can also be appended
-    ws.append([1, 2, 3])
-
-    # Save the file
-    wb.save('sample.xlsx')
-
-    file = open('sample.xlsx', 'rb')
-    await bot.send_document(config.tg_bot.admin_id, document=file)
+    for c in competitors:
+        file_id = c.files_id
+        file_name = c.created_at
+        if str(file_name) > x_date:
+            file = await callback.message.bot.get_file(file_id)
+            await callback.message.bot.download(file, destination=f'./photos/{file_name}.jpg')
+            y.upload(f'./photos/{file_name}.jpg', f'/EST-TM-photos/{file_name}.jpg')
+            x_date = str(file_name)
+    export_xls()
+    date = dt.datetime.now().strftime("%d-%m-%y")
+    file = FSInputFile(f'promo_audit{date}.xlsx')
+    await callback.message.answer_document(document=file)
 
 
 @router.callback_query(StateFilter(default_state), F.data == 'send_activity')
@@ -181,7 +181,7 @@ async def get_condition(message: Message, state: FSMContext):
 @router.message(StateFilter(FSMCompetitor.get_photo))
 async def get_files_id(message: Message, state: FSMContext):
     '''Получение фотографии акции'''
-    await state.update_data(files_id=message.photo[0].file_id)
+    await state.update_data(files_id=message.photo[-1].file_id)
     await state.update_data(user_id=message.chat.id)
     data = await state.get_data()
     await state.set_state(FSMCompetitor.confirm)

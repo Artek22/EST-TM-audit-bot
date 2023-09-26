@@ -1,5 +1,6 @@
 from datetime import datetime as dt
 from sqlalchemy.exc import IntegrityError
+from openpyxl import Workbook
 
 from db.models import Competitor, User
 from db.engine import session
@@ -52,3 +53,19 @@ def is_user_in_db(user_id):
     '''Проверяем наличие пользователя в базе данных.'''
     return session.query(
         session.query(User).filter(User.id == user_id).exists()).scalar()
+
+
+def export_xls():
+    wb = Workbook()
+    ws = wb.active
+    ws.append(
+        ["Агент", "Компания", "Бренд", "Тип промо", "Бонус", "Условие", "Фото",
+         "Дата создания"]
+    )
+    competitors = session.query(Competitor)
+
+    for c in competitors:
+        ws.append([c.user_id, c.company_name, c.brand, c.promo_type, c.bonus,
+                   c.condition, c.files_id, c.created_at])
+    date = dt.now().strftime("%d-%m-%y")
+    wb.save(f'promo_audit{date}.xlsx')

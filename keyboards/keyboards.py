@@ -55,6 +55,4 @@ def download_keyboard():
     download_button: InlineKeyboardButton = InlineKeyboardButton(
         text='Экспорт БД в Excel', callback_data='export')
     kb_builder.row(activity_button, download_button, width=1)
-    # export_keyboard: InlineKeyboardMarkup = InlineKeyboardMarkup(
-    #     inline_keyboard=[[download_button, activity_button]])
     return kb_builder.as_markup()
