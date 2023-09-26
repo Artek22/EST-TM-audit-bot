@@ -29,28 +29,27 @@ async def process_cancel_command_state(message: Message, state: FSMContext):
     await state.clear()
 
 
-@router.message(CommandStart)
-async def assa(message):
-    file = FSInputFile('sample.xlsx')
-    await message.answer_document(document=file)
+# @router.message(CommandStart)
+# async def assa(message):
+#     file = FSInputFile('sample.xlsx')
+#     await message.answer_document(document=file)
 
-# @router.message(CommandStart(), StateFilter(default_state))
-# async def process_start_command(message: Message, state: FSMContext):
-#     '''Начало анкетрование пользователя, ввод имени'''
-#     # Проверяем есть ли юзер в базе
-#     user = select_user(message.chat.id)
-#
-#     if message.chat.id == config.tg_bot.admin_id:
-#         await message.answer(
-#             f'Приветствую, босс! Рад тебя видеть, босс!',
-#             reply_markup=download_keyboard())
-#     elif is_user_in_db(message.chat.id):
-#         # await state.clear()
-#         await message.answer(f'Приветствую, {user.name}',
-#                              reply_markup=create_activity_keyboard())
-#     else:
-#         await message.answer(LEXICON_COMMANDS['/start'])
-#         await state.set_state(FSMUserForm.get_name)
+@router.message(CommandStart(), StateFilter(default_state))
+async def process_start_command(message: Message, state: FSMContext):
+    '''/Start. Начало анкетрование пользователя, ввод имени'''
+    # Проверяем есть ли юзер в базе
+    user = select_user(message.chat.id)
+
+    if message.chat.id == config.tg_bot.admin_id:
+        await message.answer(
+            f'Приветствую, босс! Рад тебя видеть, босс!',
+            reply_markup=download_keyboard())
+    elif is_user_in_db(message.chat.id):
+        await message.answer(f'Приветствую, {user.name}',
+                             reply_markup=create_activity_keyboard())
+    else:
+        await message.answer(LEXICON_COMMANDS['/start'])
+        await state.set_state(FSMUserForm.get_name)
 
 
 @router.message(StateFilter(FSMUserForm.get_name), F.text.isalpha())
@@ -101,17 +100,6 @@ async def process_survey_finished(callback: CallbackQuery, state: FSMContext):
         await state.clear()
         await callback.message.edit_text(LEXICON['confirmed'],
                                          reply_markup=create_activity_keyboard())
-
-
-def to_dict(row):
-    if row is None:
-        return None
-
-    rtn_dict = dict()
-    keys = row.__table__.columns.keys()
-    for key in keys:
-        rtn_dict[key] = getattr(row, key)
-    return rtn_dict
 
 
 @router.callback_query(F.data == 'export')
