@@ -1,8 +1,9 @@
+from openpyxl import Workbook
 from aiogram import Router, F
 from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from utils.statesform import FSMUserForm, FSMCompetitor
 
 from est_audit_bot import bot
@@ -10,7 +11,7 @@ from config_data.config import load_config
 from lexicon.lexicon import LEXICON_COMMANDS, LEXICON
 from keyboards.keyboards import (create_confirmation_keyboard,
                                  create_activity_keyboard, promo_type_keyboard,
-                                 approve_keyboard)
+                                 approve_keyboard, download_keyboard)
 from utils.db_commands import (register_user, register_competitor, select_user,
                                is_user_in_db)
 
@@ -28,18 +29,28 @@ async def process_cancel_command_state(message: Message, state: FSMContext):
     await state.clear()
 
 
-@router.message(CommandStart(), StateFilter(default_state))
-async def process_start_command(message: Message, state: FSMContext):
-    '''Начало анкетрование пользователя, ввод имени'''
-    # Проверяем есть ли юзер в базе
-    user = select_user(message.chat.id)
-    if is_user_in_db(message.chat.id):
-        await state.clear()
-        await message.answer(f'Приветствую, {user.name}',
-                             reply_markup=create_activity_keyboard())
-    else:
-        await message.answer(LEXICON_COMMANDS['/start'])
-        await state.set_state(FSMUserForm.get_name)
+@router.message(CommandStart)
+async def assa(message):
+    file = FSInputFile('sample.xlsx')
+    await message.answer_document(document=file)
+
+# @router.message(CommandStart(), StateFilter(default_state))
+# async def process_start_command(message: Message, state: FSMContext):
+#     '''Начало анкетрование пользователя, ввод имени'''
+#     # Проверяем есть ли юзер в базе
+#     user = select_user(message.chat.id)
+#
+#     if message.chat.id == config.tg_bot.admin_id:
+#         await message.answer(
+#             f'Приветствую, босс! Рад тебя видеть, босс!',
+#             reply_markup=download_keyboard())
+#     elif is_user_in_db(message.chat.id):
+#         # await state.clear()
+#         await message.answer(f'Приветствую, {user.name}',
+#                              reply_markup=create_activity_keyboard())
+#     else:
+#         await message.answer(LEXICON_COMMANDS['/start'])
+#         await state.set_state(FSMUserForm.get_name)
 
 
 @router.message(StateFilter(FSMUserForm.get_name), F.text.isalpha())
@@ -90,6 +101,38 @@ async def process_survey_finished(callback: CallbackQuery, state: FSMContext):
         await state.clear()
         await callback.message.edit_text(LEXICON['confirmed'],
                                          reply_markup=create_activity_keyboard())
+
+
+def to_dict(row):
+    if row is None:
+        return None
+
+    rtn_dict = dict()
+    keys = row.__table__.columns.keys()
+    for key in keys:
+        rtn_dict[key] = getattr(row, key)
+    return rtn_dict
+
+
+@router.callback_query(F.data == 'export')
+async def export2excel(callback: CallbackQuery):
+    '''Экспорт БД в эксель-файл'''
+    wb = Workbook()
+
+    # grab the active worksheet
+    ws = wb.active
+
+    # Data can be assigned directly to cells
+    ws['A1'] = 42
+
+    # Rows can also be appended
+    ws.append([1, 2, 3])
+
+    # Save the file
+    wb.save('sample.xlsx')
+
+    file = open('sample.xlsx', 'rb')
+    await bot.send_document(config.tg_bot.admin_id, document=file)
 
 
 @router.callback_query(StateFilter(default_state), F.data == 'send_activity')
@@ -187,7 +230,12 @@ async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
     await bot.send_photo(chat_id=config.tg_bot.admin_id, photo=image,
                          caption=f'Привет, новая акция: {info}')
     await bot.session.close()
-    await callback.message.answer(LEXICON['finish'], reply_markup=create_activity_keyboard())
+    if callback.message.chat.id == config.tg_bot.admin_id:
+        await callback.message.answer(LEXICON['finish'],
+                                      reply_markup=download_keyboard())
+    elif is_user_in_db(callback.message.chat.id):
+        await callback.message.answer(LEXICON['finish'],
+                                      reply_markup=create_activity_keyboard())
     await state.clear()
 
 
@@ -195,5 +243,6 @@ async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
 async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
     '''Отмена акции'''
     await callback.message.delete()
-    await callback.message.answer('Попробуем еще раз?', reply_markup=create_activity_keyboard())
+    await callback.message.answer('Попробуем еще раз?',
+                                  reply_markup=create_activity_keyboard())
     await state.clear()

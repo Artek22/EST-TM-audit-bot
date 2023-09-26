@@ -45,3 +45,16 @@ def approve_keyboard():
     ok_keyboard: InlineKeyboardMarkup = InlineKeyboardMarkup(
         inline_keyboard=[[approve_button], [reject_button]])
     return ok_keyboard
+
+
+def download_keyboard():
+    kb_builder = InlineKeyboardBuilder()
+    activity_button: InlineKeyboardButton = InlineKeyboardButton(
+        text='Выслать активность конкурентов',
+        callback_data='send_activity')
+    download_button: InlineKeyboardButton = InlineKeyboardButton(
+        text='Экспорт БД в Excel', callback_data='export')
+    kb_builder.row(activity_button, download_button, width=1)
+    # export_keyboard: InlineKeyboardMarkup = InlineKeyboardMarkup(
+    #     inline_keyboard=[[download_button, activity_button]])
+    return kb_builder.as_markup()
