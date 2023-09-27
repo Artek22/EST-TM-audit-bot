@@ -19,7 +19,6 @@ from utils.db_commands import (register_user, register_competitor, select_user,
 from db.models import Competitor
 from db.engine import session
 
-
 router = Router()
 config = load_config()
 
@@ -107,20 +106,33 @@ async def export2excel(callback: CallbackQuery):
     '''Экспорт БД в эксель-файл и заливка на Я.Диск'''
     y = yadisk.YaDisk(token=config.yandex_id)
     competitors = session.query(Competitor)
-    x_date = '2023-09-26 15:26:09.135528'
+    # Достаем дату последнего загруженного файла
+    await callback.message.answer(LEXICON['loading'])
+    with open('x_date.txt', 'r') as f:
+        x_date = f.read()
+        f.close()
 
     for c in competitors:
         file_id = c.files_id
-        file_name = c.created_at
-        if str(file_name) > x_date:
+        f_name = str(c.created_at).replace(':', '/')
+        file_name = str(c.created_at)
+        if f_name > x_date:
             file = await callback.message.bot.get_file(file_id)
-            await callback.message.bot.download(file, destination=f'./photos/{file_name}.jpg')
-            y.upload(f'./photos/{file_name}.jpg', f'/EST-TM-photos/{file_name}.jpg')
-            x_date = str(file_name)
+            await callback.message.bot.download(file,
+                                                destination=f'./photos/{file_name}.jpg')
+            y.upload(f'./photos/{file_name}.jpg',
+                     f'/EST-TM-photos/{file_name}.jpg')
+            x_date = file_name
+
+    with open('x_date.txt', 'w') as f:
+        f.seek(0, 0)
+        f.write(x_date)
+        f.close()
+
     export_xls()
     date = dt.datetime.now().strftime("%d-%m-%y")
     file = FSInputFile(f'promo_audit{date}.xlsx')
-    await callback.message.answer_document(document=file)
+    await callback.message.answer_document(document=file, caption='Загрузка завершена.')
 
 
 @router.callback_query(StateFilter(default_state), F.data == 'send_activity')
