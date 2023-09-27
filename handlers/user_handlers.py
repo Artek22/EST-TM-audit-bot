@@ -39,7 +39,7 @@ async def process_start_command(message: Message, state: FSMContext):
     # Проверяем есть ли юзер в базе
     user = select_user(message.chat.id)
 
-    if message.chat.id == config.tg_bot.admin_id:
+    if message.chat.id == config.boss_id:
         await message.answer(
             f'Приветствую, босс! Рад тебя видеть, босс!',
             reply_markup=download_keyboard())
@@ -104,10 +104,11 @@ async def process_survey_finished(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == 'export')
 async def export2excel(callback: CallbackQuery):
     '''Экспорт БД в эксель-файл и заливка на Я.Диск'''
+    await callback.message.delete()
     y = yadisk.YaDisk(token=config.yandex_id)
     competitors = session.query(Competitor)
-    # Достаем дату последнего загруженного файла
     await callback.message.answer(LEXICON['loading'])
+    # Достаем дату последнего загруженного файла
     with open('x_date.txt', 'r') as f:
         x_date = f.read()
         f.close()
@@ -132,7 +133,9 @@ async def export2excel(callback: CallbackQuery):
     export_xls()
     date = dt.datetime.now().strftime("%d-%m-%y")
     file = FSInputFile(f'promo_audit{date}.xlsx')
-    await callback.message.answer_document(document=file, caption='Загрузка завершена.')
+    await callback.message.answer_document(document=file,
+                                           caption='Загрузка завершена.',
+                                           reply_markup=download_keyboard())
 
 
 @router.callback_query(StateFilter(default_state), F.data == 'send_activity')
@@ -190,7 +193,7 @@ async def get_condition(message: Message, state: FSMContext):
     await state.set_state(FSMCompetitor.get_photo)
 
 
-@router.message(StateFilter(FSMCompetitor.get_photo))
+@router.message(StateFilter(FSMCompetitor.get_photo), F.photo)
 async def get_files_id(message: Message, state: FSMContext):
     '''Получение фотографии акции'''
     await state.update_data(files_id=message.photo[-1].file_id)
@@ -212,6 +215,12 @@ async def get_files_id(message: Message, state: FSMContext):
         reply_markup=approve_keyboard())
 
 
+@router.message(StateFilter(FSMCompetitor.get_photo))
+async def get_files_id_not_photo(message: Message):
+    '''Получение фотографии акции'''
+    await message.answer('Это не похоже на фото.')
+
+
 @router.callback_query(FSMCompetitor.confirm, F.data == 'approved')
 async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
     '''Подтверждение акции и высылка акции боссу'''
@@ -225,17 +234,18 @@ async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
         f'Условие получения: {data["condition"]}\n'
     )
     image = data['files_id']
-    register_competitor(data)
     # Высылаем акцию боссу
-    await bot.send_photo(chat_id=config.tg_bot.admin_id, photo=image,
+    await bot.send_photo(chat_id=config.boss_id, photo=image,
                          caption=f'Привет, новая акция: {info}')
     await bot.session.close()
-    if callback.message.chat.id == config.tg_bot.admin_id:
+    if callback.message.chat.id == config.boss_id:
         await callback.message.answer(LEXICON['finish'],
                                       reply_markup=download_keyboard())
     elif is_user_in_db(callback.message.chat.id):
         await callback.message.answer(LEXICON['finish'],
                                       reply_markup=create_activity_keyboard())
+    # Сохраняем акцию
+    register_competitor(data)
     await state.clear()
 
 
