@@ -59,13 +59,13 @@ def export_xls():
     wb = Workbook()
     ws = wb.active
     ws.append(
-        ["Агент", "Компания", "Бренд", "Тип промо", "Бонус", "Условие", "Фото",
+        ["Агент", "Компания", "Бренд", "Тип промо", "Бонус", "Условие",
          "Дата создания"]
     )
     competitors = session.query(Competitor)
 
     for c in competitors:
         ws.append([c.user_id, c.company_name, c.brand, c.promo_type, c.bonus,
-                   c.condition, c.files_id, c.created_at])
+                   c.condition, c.created_at])
     date = dt.now().strftime("%d-%m-%y")
     wb.save(f'promo_audit{date}.xlsx')

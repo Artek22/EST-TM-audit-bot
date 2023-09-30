@@ -115,15 +115,15 @@ async def export2excel(callback: CallbackQuery):
 
     for c in competitors:
         file_id = c.files_id
-        f_name = str(c.created_at).replace(':', '/')
-        file_name = str(c.created_at)
+        f_name = str(c.created_at).replace(':', '_')
+        file_name = c.created_at
         if f_name > x_date:
             file = await callback.message.bot.get_file(file_id)
             await callback.message.bot.download(file,
                                                 destination=f'./photos/{file_name}.jpg')
             y.upload(f'./photos/{file_name}.jpg',
                      f'/EST-TM-photos/{file_name}.jpg')
-            x_date = file_name
+            x_date = str(file_name)
 
     with open('x_date.txt', 'w') as f:
         f.seek(0, 0)
