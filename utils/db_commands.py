@@ -1,9 +1,15 @@
+import yadisk
+
 from datetime import datetime as dt
 from sqlalchemy.exc import IntegrityError
 from openpyxl import Workbook
 
+from config_data.config import load_config
 from db.models import Competitor, User
 from db.engine import session
+
+
+config = load_config()
 
 
 def register_user(user_data):
@@ -69,3 +75,29 @@ def export_xls():
                    c.condition, c.created_at])
     date = dt.now().strftime("%d-%m-%y")
     wb.save(f'promo_audit{date}.xlsx')
+
+
+async def ya_disk_upload(callback):
+    y = yadisk.YaDisk(token=config.yandex_id)
+    competitors = session.query(Competitor)
+    # Достаем дату последнего загруженного файла
+    with open('x_date.txt', 'r') as f:
+        x_date = f.read()
+        f.close()
+
+    for c in competitors:
+        file_id = c.files_id
+        f_name = str(c.created_at).replace(':', '_')
+        file_name = c.created_at
+        if f_name > x_date:
+            file = await callback.message.bot.get_file(file_id)
+            await callback.message.bot.download(file,
+                                                destination=f'./photos/{file_name}.jpg')
+            y.upload(f'./photos/{file_name}.jpg',
+                     f'/EST-TM-photos/{file_name}.jpg')
+            x_date = str(file_name)
+
+    with open('x_date.txt', 'w') as f:
+        f.seek(0, 0)
+        f.write(x_date)
+        f.close()

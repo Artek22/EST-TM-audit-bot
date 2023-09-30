@@ -1,4 +1,3 @@
-import yadisk
 import datetime as dt
 
 from aiogram import Router, F
@@ -15,9 +14,7 @@ from keyboards.keyboards import (create_confirmation_keyboard,
                                  create_activity_keyboard, promo_type_keyboard,
                                  approve_keyboard, download_keyboard)
 from utils.db_commands import (register_user, register_competitor, select_user,
-                               is_user_in_db, export_xls)
-from db.models import Competitor
-from db.engine import session
+                               is_user_in_db, export_xls, ya_disk_upload)
 
 router = Router()
 config = load_config()
@@ -105,31 +102,8 @@ async def process_survey_finished(callback: CallbackQuery, state: FSMContext):
 async def export2excel(callback: CallbackQuery):
     '''Экспорт БД в эксель-файл и заливка на Я.Диск'''
     await callback.message.delete()
-    y = yadisk.YaDisk(token=config.yandex_id)
-    competitors = session.query(Competitor)
     await callback.message.answer(LEXICON['loading'])
-    # Достаем дату последнего загруженного файла
-    with open('x_date.txt', 'r') as f:
-        x_date = f.read()
-        f.close()
-
-    for c in competitors:
-        file_id = c.files_id
-        f_name = str(c.created_at).replace(':', '_')
-        file_name = c.created_at
-        if f_name > x_date:
-            file = await callback.message.bot.get_file(file_id)
-            await callback.message.bot.download(file,
-                                                destination=f'./photos/{file_name}.jpg')
-            y.upload(f'./photos/{file_name}.jpg',
-                     f'/EST-TM-photos/{file_name}.jpg')
-            x_date = str(file_name)
-
-    with open('x_date.txt', 'w') as f:
-        f.seek(0, 0)
-        f.write(x_date)
-        f.close()
-
+    await ya_disk_upload(callback)
     export_xls()
     date = dt.datetime.now().strftime("%d-%m-%y")
     file = FSInputFile(f'promo_audit{date}.xlsx')
