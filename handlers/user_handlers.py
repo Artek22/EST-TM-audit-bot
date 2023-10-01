@@ -20,6 +20,14 @@ router = Router()
 config = load_config()
 
 
+@router.message(Command(commands='help'))
+async def process_cancel_command_state(message: Message, state: FSMContext):
+    '''
+    Этот хэндлер будет срабатывать на команду "/help" в любых состояниях.
+    '''
+    await message.answer(LEXICON_COMMANDS['/help'])
+
+
 @router.message(Command(commands='cancel'), ~StateFilter(default_state))
 async def process_cancel_command_state(message: Message, state: FSMContext):
     '''

@@ -6,6 +6,7 @@ from aiogram.enums import ParseMode
 
 from config_data.config import load_config
 from handlers import user_handlers
+from utils.set_menu import set_main_menu
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ async def main():
 
     # Пропускаем накопившиеся апдейты и запускаем polling
     await bot.delete_webhook(drop_pending_updates=True)
+    await set_main_menu(bot)
     await dp.start_polling(bot)
     logger.info('Bot stopped!')
 

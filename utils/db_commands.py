@@ -95,7 +95,7 @@ async def ya_disk_upload(callback):
                                                 destination=f'./photos/{file_name}.jpg')
             y.upload(f'./photos/{file_name}.jpg',
                      f'/EST-TM-photos/{file_name}.jpg')
-            x_date = str(file_name)
+            x_date = str(file_name).replace(':', '_')
 
     with open('x_date.txt', 'w') as f:
         f.seek(0, 0)
