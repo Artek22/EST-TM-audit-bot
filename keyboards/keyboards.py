@@ -23,16 +23,30 @@ def create_activity_keyboard():
     return activity_keyboard
 
 
+def promo_for_keyboard():
+    promo_for: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    promo_for.row(InlineKeyboardButton(text='🧍ТП',
+                                       callback_data='tp'),
+                  InlineKeyboardButton(text='🧍СВ',
+                                       callback_data='sv'),
+                  InlineKeyboardButton(text='🧍ЛПР',
+                                       callback_data='lpr'),
+                  InlineKeyboardButton(text='🧍ТТ',
+                                       callback_data='tt'),
+                  InlineKeyboardButton(text='🧍КП',
+                                       callback_data='kp'),
+                  width=3)
+    return promo_for.as_markup()
+
+
 def promo_type_keyboard():
     promo_keyboard: InlineKeyboardBuilder = InlineKeyboardBuilder()
-    promo_keyboard.row(InlineKeyboardButton(text='⬇️Скидка на полке',
+    promo_keyboard.row(InlineKeyboardButton(text='⬇️Скидка',
                                             callback_data='discount'),
                        InlineKeyboardButton(text='🎁Подарок за покупку',
                                             callback_data='gift'),
-                       InlineKeyboardButton(text='✨Бонус ТП',
-                                            callback_data='bonus_tp'),
-                       InlineKeyboardButton(text='✨Бонус ЛПР',
-                                            callback_data='bonus_lpr'),
+                       InlineKeyboardButton(text='✨Бонус',
+                                            callback_data='bonus'),
                        width=2)
     return promo_keyboard.as_markup()
 

@@ -15,8 +15,10 @@ class FSMCompetitor(StatesGroup):
     '''
     get_company_name = State()
     get_brand = State()
+    get_promo_for = State()
     get_promo_type = State()
     get_bonus = State()
     get_condition = State()
     get_photo = State()
+    get_comment = State()
     confirm = State()

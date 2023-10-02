@@ -25,10 +25,12 @@ class Competitor(DeclarativeBase):
                      nullable=False)
     company_name = Column(String(50), nullable=False)
     brand = Column(String(50), nullable=False)
+    promo_for = Column(String(10), nullable=False)
     promo_type = Column(String(50), nullable=False)
     bonus = Column(String(50), nullable=False)
     condition = Column(String(100), nullable=False)
     files_id = Column(String, nullable=True)
+    comment = Column(String(255), nullable=True)
     created_at = Column(TIMESTAMP, nullable=False)
 
     def __repr__(self):
