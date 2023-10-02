@@ -8,7 +8,6 @@ from config_data.config import load_config
 from db.models import Competitor, User
 from db.engine import session
 
-
 config = load_config()
 
 
@@ -30,9 +29,12 @@ def register_user(user_data):
 
 def register_competitor(data):
     '''Регистрируем активность конкурента.'''
+    author = session.get(User, data['user_id'])
+
     competitor = Competitor(
         user_id=data['user_id'],
-        company_name=data['company_name'],
+        author_name=f'{author.name} {author.surname}',
+        commodity_direction=data['commodity_direction'],
         brand=data['brand'],
         promo_for=data['promo_for'],
         promo_type=data['promo_type'],
@@ -67,14 +69,15 @@ def export_xls():
     wb = Workbook()
     ws = wb.active
     ws.append(
-        ["Агент", "Компания", "Бренд", "Тип промо", "Бонус", "Условие",
-         "Дата создания"]
+        ["Агент", "Товарное направление", "Бренд", "Для кого промо", "Тип промо",
+         "Бонус", "Условие", "Комментарий", "Дата создания"]
     )
     competitors = session.query(Competitor)
-
     for c in competitors:
-        ws.append([c.user_id, c.company_name, c.brand, c.promo_type, c.bonus,
-                   c.condition, c.created_at])
+        ws.append(
+            [c.author_name, c.commodity_direction, c.brand,
+             c.promo_for, c.promo_type, c.bonus, c.condition, c.comment,
+             c.created_at])
     date = dt.now().strftime("%d-%m-%y")
     wb.save(f'promo_audit{date}.xlsx')
 

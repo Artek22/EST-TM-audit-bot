@@ -43,10 +43,10 @@ def promo_type_keyboard():
     promo_keyboard: InlineKeyboardBuilder = InlineKeyboardBuilder()
     promo_keyboard.row(InlineKeyboardButton(text='⬇️Скидка',
                                             callback_data='discount'),
-                       InlineKeyboardButton(text='🎁Подарок за покупку',
-                                            callback_data='gift'),
                        InlineKeyboardButton(text='✨Бонус',
                                             callback_data='bonus'),
+                       InlineKeyboardButton(text='🎁Подарок за покупку',
+                                            callback_data='gift'),
                        width=2)
     return promo_keyboard.as_markup()
 

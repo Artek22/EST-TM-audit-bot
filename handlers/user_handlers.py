@@ -123,17 +123,17 @@ async def export2excel(callback: CallbackQuery):
 
 @router.callback_query(StateFilter(default_state), F.data == 'send_activity')
 async def process_survey_start(callback: CallbackQuery, state: FSMContext):
-    '''Начало опроса активности конкурентов. Ввод названия компании'''
+    '''Начало опроса активности конкурентов. Ввод товарного направления'''
     await callback.message.delete()
-    await callback.message.answer(LEXICON['company_name'])
-    await state.set_state(FSMCompetitor.get_company_name)
+    await callback.message.answer(LEXICON['commodity_direction'])
+    await state.set_state(FSMCompetitor.get_commodity_direction)
 
 
-# Сохраняем название компании
-@router.message(StateFilter(FSMCompetitor.get_company_name))
+# Сохраняем товарное направление
+@router.message(StateFilter(FSMCompetitor.get_commodity_direction))
 async def get_company_name(message: Message, state: FSMContext):
     '''Ввод промоутируемого бренда'''
-    await state.update_data(company_name=message.text)
+    await state.update_data(commodity_direction=message.text)
     await message.answer(LEXICON['brand']),
     await state.set_state(FSMCompetitor.get_brand)
 
@@ -212,7 +212,7 @@ async def get_comment(message: Message, state: FSMContext):
     data = await state.get_data()
     await message.answer(LEXICON['confirm'])
     info = (
-        f'Название компании: {data["company_name"]}\n'
+        f'Товарное направление: {data["commodity_direction"]}\n'
         f'Бренд: {data["brand"]}\n'
         f'Для кого акция: {data["promo_for"]}\n'
         f'Тип промо: {data["promo_type"]}\n'
@@ -237,7 +237,7 @@ async def get_no_comment(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await callback.message.answer(LEXICON['confirm'])
     info = (
-        f'Название компании: {data["company_name"]}\n'
+        f'Товарное направление: {data["commodity_direction"]}\n'
         f'Бренд: {data["brand"]}\n'
         f'Для кого акция: {data["promo_for"]}\n'
         f'Тип промо: {data["promo_type"]}\n'
@@ -258,7 +258,7 @@ async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
     data = await state.get_data()
     info = (
-        f'Название компании: {data["company_name"]}\n'
+        f'Товарное направление: {data["commodity_direction"]}\n'
         f'Бренд: {data["brand"]}\n'
         f'Для кого акция: {data["promo_for"]}\n'
         f'Тип промо: {data["promo_type"]}\n'
@@ -267,6 +267,10 @@ async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
         f'Комментарий: {data["comment"]}\n'
     )
     image = data['files_id']
+    # Сохраняем акцию
+    await callback.message.answer(text='Сохраняем...')
+    register_competitor(data)
+    await state.clear()
     # Высылаем акцию боссу
     await bot.send_photo(chat_id=config.boss_id, photo=image,
                          caption=f'Привет, новая акция: {info}')
@@ -277,9 +281,6 @@ async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
     elif is_user_in_db(callback.message.chat.id):
         await callback.message.answer(LEXICON['finish'],
                                       reply_markup=create_activity_keyboard())
-    # Сохраняем акцию
-    register_competitor(data)
-    await state.clear()
 
 
 @router.callback_query(FSMCompetitor.confirm, F.data == 'rejected')
