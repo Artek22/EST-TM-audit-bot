@@ -12,6 +12,7 @@ from config_data.config import load_config
 from lexicon.lexicon import LEXICON_COMMANDS, LEXICON
 from keyboards.keyboards import (create_confirmation_keyboard,
                                  create_activity_keyboard, promo_type_keyboard,
+                                 promo_for_keyboard, skip_keyboard,
                                  approve_keyboard, download_keyboard)
 from utils.db_commands import (register_user, register_competitor, select_user,
                                is_user_in_db, export_xls, ya_disk_upload)
@@ -21,7 +22,7 @@ config = load_config()
 
 
 @router.message(Command(commands='help'))
-async def process_cancel_command_state(message: Message, state: FSMContext):
+async def process_cancel_command_state(message: Message):
     '''
     Этот хэндлер будет срабатывать на команду "/help" в любых состояниях.
     '''
@@ -66,7 +67,7 @@ async def get_name(message: Message, state: FSMContext):
 
 @router.message(StateFilter(FSMUserForm.get_name))
 async def warning_not_name(message: Message):
-    '''Проверка, что пользователь ввел буквы'''
+    '''Проверка, что пользователь ввел буквы в имени'''
     await message.answer(LEXICON['err_name'])
 
 
@@ -83,7 +84,7 @@ async def get_surname(message: Message, state: FSMContext):
 
 @router.message(StateFilter(FSMUserForm.get_surname))
 async def warning_not_surname(message: Message):
-    '''Проверка, что пользователь ввел буквы'''
+    '''Проверка, что пользователь ввел буквы в фамилии'''
     await message.answer(LEXICON['err_surname'])
 
 
@@ -122,7 +123,7 @@ async def export2excel(callback: CallbackQuery):
 
 @router.callback_query(StateFilter(default_state), F.data == 'send_activity')
 async def process_survey_start(callback: CallbackQuery, state: FSMContext):
-    '''Начало опроса активности конкурентов'''
+    '''Начало опроса активности конкурентов. Ввод названия компании'''
     await callback.message.delete()
     await callback.message.answer(LEXICON['company_name'])
     await state.set_state(FSMCompetitor.get_company_name)
@@ -131,7 +132,7 @@ async def process_survey_start(callback: CallbackQuery, state: FSMContext):
 # Сохраняем название компании
 @router.message(StateFilter(FSMCompetitor.get_company_name))
 async def get_company_name(message: Message, state: FSMContext):
-    '''Ввод названия компании'''
+    '''Ввод промоутируемого бренда'''
     await state.update_data(company_name=message.text)
     await message.answer(LEXICON['brand']),
     await state.set_state(FSMCompetitor.get_brand)
@@ -140,17 +141,28 @@ async def get_company_name(message: Message, state: FSMContext):
 # Сохраняем бренд
 @router.message(StateFilter(FSMCompetitor.get_brand))
 async def get_brand(message: Message, state: FSMContext):
-    '''Ввод промоутируемого бренда'''
+    '''Выбор на кого направлена акция'''
     await state.update_data(brand=message.text)
-    await message.answer(LEXICON['promo_type'],
-                         reply_markup=promo_type_keyboard()),
+    await message.answer(LEXICON['promo_for'],
+                         reply_markup=promo_for_keyboard()),
+    await state.set_state(FSMCompetitor.get_promo_for)
+
+
+# Сохраняем на кого направлена акция
+@router.callback_query(StateFilter(FSMCompetitor.get_promo_for))
+async def get_promo_for(callback: CallbackQuery, state: FSMContext):
+    '''Выбор типа акции'''
+    await state.update_data(promo_for=callback.data)
+    await callback.message.delete()
+    await callback.message.answer(LEXICON['promo_type'],
+                                  reply_markup=promo_type_keyboard()),
     await state.set_state(FSMCompetitor.get_promo_type)
 
 
 # Сохраняем тип акции
 @router.callback_query(StateFilter(FSMCompetitor.get_promo_type))
 async def get_promo_type(callback: CallbackQuery, state: FSMContext):
-    '''Выбор типа проводимой акции'''
+    '''Ввод размера бонуса'''
     await state.update_data(promo_type=callback.data)
     await callback.message.delete()
     await callback.message.answer(LEXICON['bonus'])
@@ -160,7 +172,7 @@ async def get_promo_type(callback: CallbackQuery, state: FSMContext):
 # Сохраняем бонус
 @router.message(StateFilter(FSMCompetitor.get_bonus))
 async def get_bonus(message: Message, state: FSMContext):
-    '''Ввод размера бонуса'''
+    '''Ввод условия получения бонуса'''
     await state.update_data(bonus=message.text)
     await message.answer(LEXICON['condition']),
     await state.set_state(FSMCompetitor.get_condition)
@@ -169,26 +181,44 @@ async def get_bonus(message: Message, state: FSMContext):
 # Сохраняем условие
 @router.message(StateFilter(FSMCompetitor.get_condition))
 async def get_condition(message: Message, state: FSMContext):
-    '''Ввод условия получения бонуса'''
+    '''Получение фотографии акции'''
     await state.update_data(condition=message.text)
     await message.answer(LEXICON['photo']),
     await state.set_state(FSMCompetitor.get_photo)
 
 
+# Сохраняем фото
 @router.message(StateFilter(FSMCompetitor.get_photo), F.photo)
 async def get_files_id(message: Message, state: FSMContext):
-    '''Получение фотографии акции'''
+    '''Получение комментария'''
     await state.update_data(files_id=message.photo[-1].file_id)
+    await message.answer(LEXICON['comment'], reply_markup=skip_keyboard())
+    await state.set_state(FSMCompetitor.get_comment)
+
+
+@router.message(StateFilter(FSMCompetitor.get_photo))
+async def get_files_id_not_photo(message: Message):
+    '''Получение фотографии акции'''
+    await message.answer('Это не похоже на фото.')
+
+
+# Сохраняем комментарий
+@router.message(StateFilter(FSMCompetitor.get_comment), F.text)
+async def get_comment(message: Message, state: FSMContext):
+    '''Подтверждение акции с комментарием'''
+    await state.update_data(comment=message.text)
     await state.update_data(user_id=message.chat.id)
-    data = await state.get_data()
     await state.set_state(FSMCompetitor.confirm)
+    data = await state.get_data()
     await message.answer(LEXICON['confirm'])
     info = (
         f'Название компании: {data["company_name"]}\n'
         f'Бренд: {data["brand"]}\n'
+        f'Для кого акция: {data["promo_for"]}\n'
         f'Тип промо: {data["promo_type"]}\n'
         f'Какой бонус: {data["bonus"]}\n'
         f'Условие получения: {data["condition"]}\n'
+        f'Комментарий: {data["comment"]}\n'
     )
     image = data['files_id']
     await message.answer_photo(
@@ -197,10 +227,29 @@ async def get_files_id(message: Message, state: FSMContext):
         reply_markup=approve_keyboard())
 
 
-@router.message(StateFilter(FSMCompetitor.get_photo))
-async def get_files_id_not_photo(message: Message):
-    '''Получение фотографии акции'''
-    await message.answer('Это не похоже на фото.')
+# Сохраняем пустой комментарий
+@router.callback_query(StateFilter(FSMCompetitor.get_comment), F.data == 'skip')
+async def get_no_comment(callback: CallbackQuery, state: FSMContext):
+    '''Подтверждение акции без комментария'''
+    await state.update_data(comment='')
+    await state.update_data(user_id=callback.message.chat.id)
+    await state.set_state(FSMCompetitor.confirm)
+    data = await state.get_data()
+    await callback.message.answer(LEXICON['confirm'])
+    info = (
+        f'Название компании: {data["company_name"]}\n'
+        f'Бренд: {data["brand"]}\n'
+        f'Для кого акция: {data["promo_for"]}\n'
+        f'Тип промо: {data["promo_type"]}\n'
+        f'Какой бонус: {data["bonus"]}\n'
+        f'Условие получения: {data["condition"]}\n'
+        f'Комментарий: {data["comment"]}\n'
+    )
+    image = data['files_id']
+    await callback.message.answer_photo(
+        photo=image,
+        caption=info,
+        reply_markup=approve_keyboard())
 
 
 @router.callback_query(FSMCompetitor.confirm, F.data == 'approved')
@@ -211,9 +260,11 @@ async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
     info = (
         f'Название компании: {data["company_name"]}\n'
         f'Бренд: {data["brand"]}\n'
+        f'Для кого акция: {data["promo_for"]}\n'
         f'Тип промо: {data["promo_type"]}\n'
         f'Какой бонус: {data["bonus"]}\n'
         f'Условие получения: {data["condition"]}\n'
+        f'Комментарий: {data["comment"]}\n'
     )
     image = data['files_id']
     # Высылаем акцию боссу

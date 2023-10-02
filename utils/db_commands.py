@@ -34,10 +34,12 @@ def register_competitor(data):
         user_id=data['user_id'],
         company_name=data['company_name'],
         brand=data['brand'],
+        promo_for=data['promo_for'],
         promo_type=data['promo_type'],
         bonus=data['bonus'],
         condition=data['condition'],
         files_id=data['files_id'],
+        comment=data['comment'],
         created_at=dt.now(),
     )
     session.add(competitor)

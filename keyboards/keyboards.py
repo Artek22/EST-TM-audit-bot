@@ -70,3 +70,12 @@ def download_keyboard():
         text='Экспорт БД в Excel', callback_data='export')
     kb_builder.row(activity_button, download_button, width=1)
     return kb_builder.as_markup()
+
+
+def skip_keyboard():
+    skip_button: InlineKeyboardButton = InlineKeyboardButton(
+        text='Пропустить',
+        callback_data='skip')
+    skip1_keyboard: InlineKeyboardMarkup = InlineKeyboardMarkup(
+        inline_keyboard=[[skip_button]])
+    return skip1_keyboard
