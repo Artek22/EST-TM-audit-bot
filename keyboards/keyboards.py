@@ -79,3 +79,19 @@ def skip_keyboard():
     skip1_keyboard: InlineKeyboardMarkup = InlineKeyboardMarkup(
         inline_keyboard=[[skip_button]])
     return skip1_keyboard
+
+
+def admin_keyboard():
+    activity_button: InlineKeyboardButton = InlineKeyboardButton(
+        text='Выслать активность конкурентов',
+        callback_data='send_activity')
+    all_users_button: InlineKeyboardButton = InlineKeyboardButton(
+        text='Все пользователи',
+        callback_data='all_users')
+    all_number_button: InlineKeyboardButton = InlineKeyboardButton(
+        text='Количество анкет',
+        callback_data='c_count')
+    all_keyboard: InlineKeyboardMarkup = InlineKeyboardMarkup(
+        inline_keyboard=[[activity_button], [all_users_button],
+                         [all_number_button]])
+    return all_keyboard

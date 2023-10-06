@@ -13,11 +13,12 @@ from lexicon.lexicon import LEXICON_COMMANDS, LEXICON
 from keyboards.keyboards import (create_confirmation_keyboard,
                                  create_activity_keyboard, promo_type_keyboard,
                                  promo_for_keyboard, skip_keyboard,
-                                 approve_keyboard, download_keyboard)
+                                 admin_keyboard, approve_keyboard,
+                                 download_keyboard)
 from utils.db_commands import (register_user, register_competitor, select_user,
                                is_user_in_db, export_xls, ya_disk_upload)
 
-from db.models import User
+from db.models import User, Competitor
 from db.engine import session
 
 router = Router()
@@ -52,12 +53,25 @@ async def process_start_command(message: Message, state: FSMContext):
         await message.answer(
             f'Приветствую, босс! Рад тебя видеть, босс!',
             reply_markup=download_keyboard())
+    elif message.chat.id == config.tg_bot.admin_id:
+        await message.answer(f'Приветствую, {user.name}',
+                             reply_markup=admin_keyboard())
     elif is_user_in_db(message.chat.id):
         await message.answer(f'Приветствую, {user.name}',
                              reply_markup=create_activity_keyboard())
     else:
         await message.answer(LEXICON_COMMANDS['/start'])
         await state.set_state(FSMUserForm.get_name)
+
+
+@router.callback_query(F.data == 'c_count')
+async def process_count_forms(callback: CallbackQuery):
+    '''
+    Подсчет количества анкет
+    '''
+    count = session.query(Competitor).count()
+    await callback.message.delete()
+    await callback.message.answer(text=str(count), reply_markup=admin_keyboard())
 
 
 @router.message(StateFilter(FSMUserForm.get_name), F.text.isalpha())
