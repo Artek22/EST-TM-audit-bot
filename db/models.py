@@ -1,4 +1,4 @@
-from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, String, ARRAY
+from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, String, BigInteger
 from sqlalchemy.orm import declarative_base
 
 from db.engine import engine
@@ -9,7 +9,7 @@ DeclarativeBase = declarative_base()
 class User(DeclarativeBase):
     __tablename__ = "users"
 
-    id = Column("user_id", Integer, nullable=False, primary_key=True)
+    id = Column("user_id", BigInteger, nullable=False, primary_key=True)
     name = Column(String(50), nullable=False)
     surname = Column(String(50), nullable=False)
 
@@ -20,7 +20,7 @@ class User(DeclarativeBase):
 class Competitor(DeclarativeBase):
     __tablename__ = "competitors"
 
-    id = Column("competitor_id", Integer, nullable=False, primary_key=True)
+    id = Column("competitor_id", BigInteger, nullable=False, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"),
                      nullable=False)
     author_name = Column(String(100), nullable=False)

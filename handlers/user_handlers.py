@@ -17,6 +17,9 @@ from keyboards.keyboards import (create_confirmation_keyboard,
 from utils.db_commands import (register_user, register_competitor, select_user,
                                is_user_in_db, export_xls, ya_disk_upload)
 
+from db.models import User
+from db.engine import session
+
 router = Router()
 config = load_config()
 
@@ -257,7 +260,10 @@ async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
     '''Подтверждение акции и высылка акции боссу'''
     await callback.message.delete()
     data = await state.get_data()
+    get_user = session.get(User, callback.message.chat.id)
+    author = f'{get_user.name} {get_user.surname}'
     info = (
+        f'Автор: {author}\n'
         f'Товарное направление: {data["commodity_direction"]}\n'
         f'Бренд: {data["brand"]}\n'
         f'Для кого акция: {data["promo_for"]}\n'
@@ -273,7 +279,7 @@ async def process_saving_task_to_db(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     # Высылаем акцию боссу
     await bot.send_photo(chat_id=config.boss_id, photo=image,
-                         caption=f'Привет, новая акция: {info}')
+                         caption=f'Привет, новая акция:\n {info}')
     await bot.session.close()
     if callback.message.chat.id == config.boss_id:
         await callback.message.answer(LEXICON['finish'],
