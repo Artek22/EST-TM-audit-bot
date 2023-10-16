@@ -70,8 +70,20 @@ async def process_count_forms(callback: CallbackQuery):
     Подсчет количества анкет
     '''
     count = session.query(Competitor).count()
+    await callback.message.answer(text=f'Анкет: {count}\n')
+
+
+@router.callback_query(F.data == 'all_users')
+async def process_count_forms(callback: CallbackQuery):
+    '''
+    Вывод всех пользователей
+    '''
+    users = session.query(User)
+    users_list = 'Пользователи:\n'
+    for u in users:
+        users_list += f'{u.name} {u.surname}'
     await callback.message.delete()
-    await callback.message.answer(text=str(count), reply_markup=admin_keyboard())
+    await callback.message.answer(users_list, reply_markup=admin_keyboard())
 
 
 @router.message(StateFilter(FSMUserForm.get_name), F.text.isalpha())

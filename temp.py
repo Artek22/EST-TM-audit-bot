@@ -1,5 +1,6 @@
 from db.models import User, Competitor
 from db.engine import session
 
-count = session.query(Competitor).count()
-print(count)
+users = session.query(User)
+for u in users:
+    print(f'{u.name} {u.surname}')
