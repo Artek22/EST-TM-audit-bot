@@ -64,8 +64,10 @@ async def process_start_command(message: Message, state: FSMContext):
 @router.callback_query(F.data == 'c_count')
 async def process_count_forms(callback: CallbackQuery):
     """Подсчет количества анкет"""
+    await callback.message.delete()
     count = session.query(Competitor).count()
-    await callback.message.answer(text=f'Анкет: {count}\n')
+    await callback.message.answer(text=f'Анкет: {count}\n',
+                                  reply_markup=admin_keyboard())
 
 
 @router.callback_query(F.data == 'all_users')
@@ -74,7 +76,7 @@ async def process_count_forms(callback: CallbackQuery):
     users = session.query(User)
     users_list = 'Пользователи:\n'
     for u in users:
-        users_list += f'{u.name} {u.surname}'
+        users_list += f'•{u.name} {u.surname}\n'
     await callback.message.delete()
     await callback.message.answer(users_list, reply_markup=admin_keyboard())
 

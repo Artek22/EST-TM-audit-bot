@@ -34,6 +34,7 @@ def register_competitor(data):
     competitor = Competitor(
         user_id=data['user_id'],
         author_name=f'{author.name} {author.surname}',
+        client=data['client'],
         commodity_direction=data['commodity_direction'],
         brand=data['brand'],
         promo_for=data['promo_for'],
@@ -69,13 +70,13 @@ def export_xls():
     wb = Workbook()
     ws = wb.active
     ws.append(
-        ["Агент", "Товарное направление", "Бренд", "Для кого промо", "Тип промо",
+        ["Агент", "Клиент", "Товарное направление", "Бренд", "Для кого промо", "Тип промо",
          "Бонус", "Условие", "Комментарий", "Дата создания"]
     )
     competitors = session.query(Competitor)
     for c in competitors:
         ws.append(
-            [c.author_name, c.commodity_direction, c.brand,
+            [c.author_name, c.client, c.commodity_direction, c.brand,
              c.promo_for, c.promo_type, c.bonus, c.condition, c.comment,
              c.created_at])
     date = dt.now().strftime("%d-%m-%y")
