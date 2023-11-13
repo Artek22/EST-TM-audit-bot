@@ -18,7 +18,7 @@ bot = Bot(token=config.tg_bot.token, parse_mode=ParseMode.HTML)
 
 
 async def main():
-    '''Функция конфигурирования и запуска бота.'''
+    """Функция конфигурирования и запуска бота."""
     # Конфигурируем логирование
     logging.basicConfig(
         level=logging.INFO,

@@ -12,7 +12,7 @@ config = load_config()
 
 
 def register_user(user_data):
-    '''Регистрируем пользователя.'''
+    """Регистрируем пользователя."""
     user = User(
         id=user_data['id'],
         name=user_data['name'],
@@ -28,7 +28,7 @@ def register_user(user_data):
 
 
 def register_competitor(data):
-    '''Регистрируем активность конкурента.'''
+    """Регистрируем активность конкурента."""
     author = session.get(User, data['user_id'])
 
     competitor = Competitor(
@@ -54,13 +54,13 @@ def register_competitor(data):
 
 
 def select_user(user_id):
-    '''Получаем пользователя по id.'''
+    """Получаем пользователя по id."""
     user = session.query(User).filter(User.id == user_id).first()
     return user
 
 
 def is_user_in_db(user_id):
-    '''Проверяем наличие пользователя в базе данных.'''
+    """Проверяем наличие пользователя в базе данных."""
     return session.query(
         session.query(User).filter(User.id == user_id).exists()).scalar()
 
