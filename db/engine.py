@@ -22,5 +22,6 @@ url_object = URL.create(
     database=POSTGRES_DB,
 )
 
-engine = create_engine(url_object)
+engine = create_engine(url_object, pool_size=10,
+                       max_overflow=20, pool_pre_ping=True)
 session = scoped_session(sessionmaker(bind=engine))
